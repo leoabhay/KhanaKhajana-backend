@@ -1,22 +1,27 @@
-const express = require('express');
-const connectDB = require('./config/dbConfig.js');
-const signupRoutes = require('./routes/signup');
-const loginRoutes = require('./routes/login');
-require('dotenv').config();
+const express = require("express");
+const cookieParser = require('cookie-parser');
+const connectDB = require('./config/dbConfig'); // Import database config
 
+// Import the route files
+const loginRoute = require('./routes/login');
+const signupRoute = require('./routes/signup');
+
+// Initialize the app
 const app = express();
 
-// Connect to MongoDB
+// Connect to the database
 connectDB();
 
-// Middleware
+app.use(cookieParser());
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
-// Routes
-app.use('/api/signup', signupRoutes);
-app.use('/api/login', loginRoutes);
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+// Use the route files
+app.use('/login', loginRoute);
+app.use('/signup', signupRoute);
+
+const port = 3000;
+app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
 });

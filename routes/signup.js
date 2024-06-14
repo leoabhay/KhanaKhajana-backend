@@ -1,30 +1,23 @@
 const express = require('express');
+const bcrypt = require('bcrypt');
+const User = require('../models/User'); // Adjust the path to your User model
+const { signupValidationRules, validate } = require('../middleware/validation');
+
 const router = express.Router();
-const User = require('../models/User');
-const validateSignup = require('../middleware/validateSignup');
 
-// Signup route
-router.post('/', validateSignup, async (req, res) => {
-    const { name, email, password } = req.body;
-
+router.post("/", signupValidationRules(), validate, async (req, res) => {
     try {
-        const userExists = await User.findOne({ email });
-
-        if (userExists) {
-            return res.status(400).json({ error: 'Email already exists' });
-        }
-
-        const newUser = new User({
-            name,
-            email,
-            password
+        const hashedPassword = await bcrypt.hash(req.body.password, 10);
+        const user = new User({
+            name: req.body.name,
+            email: req.body.email,
+            password: hashedPassword
         });
-
-        await newUser.save();
-        res.status(201).json({ message: 'User registered successfully' });
+        await user.save();
+        res.status(201).render("home");
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Server error' });
+        res.status(500).send("Internal Server Error");
     }
 });
 

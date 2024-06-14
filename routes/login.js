@@ -1,35 +1,28 @@
 const express = require('express');
+const bcrypt = require('bcrypt');
+const User = require('../models/User'); // Adjust the path to your User model
+const { loginValidationRules, validate } = require('../middleware/validation');
+
 const router = express.Router();
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-const validateLogin = require('../middleware/validateLogin');
 
-const JWT_SECRET = process.env.JWT_SECRET; // Load from environment variable
-
-// Login route
-router.post('/', validateLogin, async (req, res) => {
-    const { email, password } = req.body;
-
+router.post("/", loginValidationRules(), validate, async (req, res) => {
     try {
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email: req.body.email });
 
         if (!user) {
-            return res.status(400).json({ error: 'Invalid email or password' });
+            return res.status(404).send("User not found");
         }
 
-        const isMatch = await bcrypt.compare(password, user.password);
+        const isPasswordMatch = await bcrypt.compare(req.body.password, user.password);
 
-        if (!isMatch) {
-            return res.status(400).json({ error: 'Invalid email or password' });
+        if (!isPasswordMatch) {
+            return res.status(400).send("Wrong password");
         }
 
-        const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '1h' });
-
-        res.json({ token });
+        res.status(200).render("home");
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Server error' });
+        res.status(500).send("Internal Server Error");
     }
 });
 
